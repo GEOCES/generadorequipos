@@ -104,7 +104,8 @@ export const useDirectExport = () => {
 
     } catch (error) {
       console.error('Error generando PDF:', error);
-      alert('Error al generar el PDF: ' + error.message);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      alert('Error al generar el PDF: ' + errorMessage);
     }
   };
 
@@ -217,7 +218,8 @@ export const useDirectExport = () => {
 
     } catch (error) {
       console.error('Error generando JPG:', error);
-      alert('Error al generar el JPG: ' + error.message);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      alert('Error al generar el JPG: ' + errorMessage);
     }
   };
 

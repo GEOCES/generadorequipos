@@ -31,7 +31,6 @@ export const useSimpleExport = () => {
 
       const pdf = new jsPDF('p', 'mm', 'a4');
       const imgWidth = 210;
-      const pageHeight = 295;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       
       console.log('Dimensiones PDF:', imgWidth, 'x', imgHeight);
@@ -42,7 +41,8 @@ export const useSimpleExport = () => {
       console.log('PDF generado exitosamente');
     } catch (error) {
       console.error('Error generando PDF:', error);
-      alert('Error al generar el PDF: ' + error.message);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      alert('Error al generar el PDF: ' + errorMessage);
     }
   };
 
@@ -75,7 +75,8 @@ export const useSimpleExport = () => {
       console.log('JPG generado exitosamente');
     } catch (error) {
       console.error('Error generando JPG:', error);
-      alert('Error al generar el JPG: ' + error.message);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      alert('Error al generar el JPG: ' + errorMessage);
     }
   };
 
