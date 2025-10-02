@@ -34,27 +34,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const loadInitialData = async () => {
-    // Cargar desde localStorage primero
-    const storedUsers = localStorage.getItem('team_generator_users');
-    if (storedUsers) {
-      setUsers(JSON.parse(storedUsers));
-    }
-
-    const storedSession = localStorage.getItem('team_generator_session');
-    if (storedSession) {
-      const sessionUser = JSON.parse(storedSession);
-      setCurrentUser(sessionUser);
-    }
-
-    // Intentar cargar desde Supabase como backup
+    // Cargar SOLO desde Supabase (sin localStorage)
     try {
       const supabaseUsers = await loadUsersFromSupabase();
-      if (supabaseUsers.length > 0) {
-        setUsers(supabaseUsers);
-        localStorage.setItem('team_generator_users', JSON.stringify(supabaseUsers));
-      }
+      setUsers(supabaseUsers);
+      console.log('Usuarios cargados desde Supabase:', supabaseUsers.length);
     } catch (error) {
-      console.log('Supabase no disponible, usando localStorage');
+      console.log('Supabase no disponible');
+      setUsers([]);
     }
   };
 
@@ -83,20 +70,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       createdAt: new Date().toISOString()
     };
 
-    const updatedUsers = [...users, newUser];
-    setUsers(updatedUsers);
-    localStorage.setItem('team_generator_users', JSON.stringify(updatedUsers));
-
-    // Intentar sincronizar con Supabase
+    // Guardar SOLO en Supabase
     try {
       await syncUserToSupabase(newUser);
+      console.log('Usuario guardado en Supabase');
+      
+      // Recargar usuarios desde Supabase
+      const supabaseUsers = await loadUsersFromSupabase();
+      setUsers(supabaseUsers);
+      
+      // Auto-login después del registro
+      setCurrentUser(newUser);
     } catch (error) {
-      console.log('No se pudo sincronizar con Supabase, pero el usuario se guardó localmente');
+      console.log('Error guardando en Supabase:', error);
+      alert('Error al guardar el usuario');
+      return false;
     }
-
-    // Auto-login después del registro
-    setCurrentUser(newUser);
-    localStorage.setItem('team_generator_session', JSON.stringify(newUser));
 
     return true;
   };
@@ -112,13 +101,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     setCurrentUser(user);
-    localStorage.setItem('team_generator_session', JSON.stringify(user));
+    // Sin localStorage - solo en memoria
     return true;
   };
 
   const logout = () => {
     setCurrentUser(null);
-    localStorage.removeItem('team_generator_session');
+    // Sin localStorage que limpiar
   };
 
   return (
