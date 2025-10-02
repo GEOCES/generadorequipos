@@ -1,13 +1,14 @@
 # ⚽ Generador de Equipos
 
-Aplicación web para generar equipos de fútbol balanceados basándose en las habilidades de los jugadores.
+Aplicación web para generar equipos de fútbol balanceados basándose en las habilidades de los jugadores. **Los usuarios se guardan globalmente en Supabase** para persistencia entre sesiones y dispositivos.
 
 ## 🚀 Características
 
-### 🔐 Sistema de Autenticación
+### 🔐 Sistema de Autenticación Global
 - **Registro de usuarios** con correo, nick y contraseña
 - **Login** con validación de credenciales
-- **Persistencia de sesión** mediante localStorage
+- **Persistencia global** mediante Supabase (PostgreSQL)
+- **Usuarios compartidos** - Cualquiera puede ver la lista de usuarios registrados
 - **Logout** con botón en el header
 
 ### 👥 Gestión de Jugadores
@@ -19,6 +20,7 @@ Los usuarios se registran con **4 habilidades** que van del 1 al 10:
 
 ### 🎲 Selección de Jugadores
 - **Agregar usuarios registrados**: Selecciona de una lista desplegable que muestra sus habilidades
+- **Lista global de usuarios** - Ve todos los usuarios registrados en la plataforma
 - **Agregar jugadores manuales**: Permite agregar nombres sin registro previo
 - **Límite de 10 jugadores** para formar 2 equipos de 5
 - **Prevención de duplicados** - No permite agregar el mismo jugador dos veces
@@ -57,6 +59,7 @@ Resultado: El algoritmo minimiza la diferencia entre los promedios finales de am
 - 📘 **TypeScript** - Tipado estático
 - ⚡ **Vite 7.1.7** - Build tool y dev server
 - 🎨 **Tailwind CSS 3.4.0** - Estilos y diseño
+- 🗄️ **Supabase** - Base de datos PostgreSQL en la nube
 - 📄 **jsPDF 3.0.3** - Generación de PDFs
 - 🖼️ **html2canvas 1.4.1** - Captura de pantalla
 - 🎯 **React Icons 5.5.0** - Iconos
@@ -71,12 +74,90 @@ git clone https://github.com/GEOCES/generadorequipos.git
 cd generadorequipos
 npm install
 
+# Configurar variables de entorno
+cp .env.example .env
+# Editar .env con tus credenciales de Supabase
+
 # Ejecutar en modo desarrollo
 npm run dev
 
 # Compilar para producción
 npm run build
 ```
+
+## ⚙️ Configuración de Supabase
+
+### **1. Crear Cuenta en Supabase**
+1. Ve a [https://supabase.com](https://supabase.com)
+2. Regístrate con GitHub
+3. Crea un nuevo proyecto
+
+### **2. Obtener Credenciales**
+1. En Supabase Dashboard → **Settings** → **API**
+2. Copia:
+   - **Project URL**: `https://abcdefgh.supabase.co`
+   - **anon public key**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`
+
+### **3. Configurar Variables de Entorno**
+Crea un archivo `.env` en la raíz del proyecto:
+```bash
+VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
+VITE_SUPABASE_ANON_KEY=tu-anon-key-aqui
+```
+
+### **4. Crear Tabla en Supabase**
+Ejecuta este SQL en **SQL Editor** de Supabase:
+
+```sql
+-- Crear tabla de usuarios
+CREATE TABLE users (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  nick TEXT UNIQUE NOT NULL,
+  password TEXT NOT NULL,
+  velocidad INTEGER NOT NULL CHECK (velocidad >= 1 AND velocidad <= 10),
+  disparo INTEGER NOT NULL CHECK (disparo >= 1 AND disparo <= 10),
+  calidad INTEGER NOT NULL CHECK (calidad >= 1 AND calidad <= 10),
+  resistencia INTEGER NOT NULL CHECK (resistencia >= 1 AND resistencia <= 10),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Crear índices
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_nick ON users(nick);
+
+-- Habilitar RLS
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+
+-- Políticas de seguridad
+CREATE POLICY "Allow public read access" ON users FOR SELECT USING (true);
+CREATE POLICY "Allow public insert" ON users FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow users to update own data" ON users FOR UPDATE USING (auth.uid() = id);
+```
+
+### **5. Para Deploy en Vercel**
+1. Ve a Vercel → Settings → Environment Variables
+2. Agrega las variables de entorno de Supabase
+3. Haz redeploy del proyecto
+
+## 🌟 Beneficios de Supabase
+
+### **Persistencia Global**
+- ✅ **Usuarios compartidos** - Cualquiera puede ver la lista de usuarios registrados
+- ✅ **Datos persistentes** - Los usuarios no se pierden al cerrar el navegador
+- ✅ **Sincronización** - Siempre actualizado entre dispositivos
+- ✅ **Escalable** - Funciona con miles de usuarios
+
+### **Profesional**
+- ✅ **Base de datos real** - PostgreSQL en la nube
+- ✅ **API automática** - Sin necesidad de backend propio
+- ✅ **Seguridad** - Row Level Security (RLS) configurado
+- ✅ **Gratis** - 500MB de almacenamiento incluido
+
+### **Sin Dependencias Locales**
+- ✅ **Sin localStorage** - Cero dependencia del navegador
+- ✅ **Funciona en cualquier dispositivo** - Los datos están en la nube
+- ✅ **Backup automático** - Supabase maneja las copias de seguridad
 
 ## 🎮 Uso
 
@@ -211,7 +292,15 @@ npm run build
 
 ## 📝 Notas de Versión
 
-### v2.0.0 - Sistema de Usuarios y Balanceo (Actual)
+### v3.0.0 - Sistema Global con Supabase (Actual)
+- ✨ **Persistencia global** con Supabase (PostgreSQL)
+- ✨ **Usuarios compartidos** - Lista global de usuarios registrados
+- ✨ **Sin localStorage** - Todos los datos en la base de datos
+- ✨ **Sincronización automática** - Siempre actualizado
+- ✨ **Escalable** - Funciona con miles de usuarios
+- ✨ **Profesional** - Como una aplicación real
+
+### v2.0.0 - Sistema de Usuarios y Balanceo
 - ✨ Sistema completo de autenticación (registro/login/logout)
 - ✨ Registro de usuarios con 4 habilidades personalizables
 - ✨ Algoritmo de balanceo inteligente por skills
