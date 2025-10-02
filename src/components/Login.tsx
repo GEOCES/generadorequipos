@@ -15,7 +15,7 @@ const Login: React.FC<LoginProps> = ({ onSuccess, onSwitchToRegister }) => {
     password: ''
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formData.email || !formData.password) {
@@ -23,7 +23,7 @@ const Login: React.FC<LoginProps> = ({ onSuccess, onSwitchToRegister }) => {
       return;
     }
 
-    const success = login({
+    const success = await login({
       email: formData.email,
       password: formData.password
     });
@@ -95,4 +95,5 @@ const Login: React.FC<LoginProps> = ({ onSuccess, onSwitchToRegister }) => {
 };
 
 export default Login;
+
 

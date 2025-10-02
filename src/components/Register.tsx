@@ -23,7 +23,7 @@ const Register: React.FC<RegisterProps> = ({ onSuccess, onSwitchToLogin }) => {
     resistencia: 5
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formData.email || !formData.nick || !formData.password) {
@@ -31,7 +31,7 @@ const Register: React.FC<RegisterProps> = ({ onSuccess, onSwitchToLogin }) => {
       return;
     }
 
-    const success = register({
+    const success = await register({
       email: formData.email,
       nick: formData.nick,
       password: formData.password,
