@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { User, RegisterData, LoginData } from '../types/user';
+import { useSupabaseSync } from '../hooks/useSupabaseSync';
 
 interface AuthContextType {
   currentUser: User | null;
   users: User[];
   login: (data: LoginData) => boolean;
-  register: (data: RegisterData) => boolean;
+  register: (data: RegisterData) => Promise<boolean>;
   logout: () => void;
   isAuthenticated: boolean;
   loading: boolean;
@@ -25,9 +26,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [loading] = useState(false);
+  const { syncUserToSupabase, loadUsersFromSupabase } = useSupabaseSync();
 
   // Cargar usuarios y sesión al iniciar
   useEffect(() => {
+    loadInitialData();
+  }, []);
+
+  const loadInitialData = async () => {
+    // Cargar desde localStorage primero
     const storedUsers = localStorage.getItem('team_generator_users');
     if (storedUsers) {
       setUsers(JSON.parse(storedUsers));
@@ -38,9 +45,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const sessionUser = JSON.parse(storedSession);
       setCurrentUser(sessionUser);
     }
-  }, []);
 
-  const register = (data: RegisterData): boolean => {
+    // Intentar cargar desde Supabase como backup
+    try {
+      const supabaseUsers = await loadUsersFromSupabase();
+      if (supabaseUsers.length > 0) {
+        setUsers(supabaseUsers);
+        localStorage.setItem('team_generator_users', JSON.stringify(supabaseUsers));
+      }
+    } catch (error) {
+      console.log('Supabase no disponible, usando localStorage');
+    }
+  };
+
+  const register = async (data: RegisterData): Promise<boolean> => {
     // Verificar si el email ya existe
     const emailExists = users.some(u => u.email.toLowerCase() === data.email.toLowerCase());
     if (emailExists) {
@@ -68,6 +86,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const updatedUsers = [...users, newUser];
     setUsers(updatedUsers);
     localStorage.setItem('team_generator_users', JSON.stringify(updatedUsers));
+
+    // Intentar sincronizar con Supabase
+    try {
+      await syncUserToSupabase(newUser);
+    } catch (error) {
+      console.log('No se pudo sincronizar con Supabase, pero el usuario se guardó localmente');
+    }
 
     // Auto-login después del registro
     setCurrentUser(newUser);
