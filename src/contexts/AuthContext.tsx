@@ -73,9 +73,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return false;
     }
 
-    // Crear nuevo usuario
+    // Crear nuevo usuario con UUID
     const newUser: User = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       email: data.email,
       nick: data.nick,
       password: data.password,

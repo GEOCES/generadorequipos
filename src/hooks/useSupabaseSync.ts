@@ -19,6 +19,8 @@ export const useSupabaseSync = () => {
           calidad: user.skills.calidad,
           resistencia: user.skills.resistencia,
           created_at: user.createdAt
+        }, {
+          onConflict: 'email'
         });
 
       if (error) {
